@@ -1,63 +1,112 @@
-# Load libraries
-import pandas as pd
+"""Simple, linear analysis of student scores.
+
+Improvements made:
+- clearer comments and sectioning
+- axis labels and titles on plots
+- safer prediction call using a DataFrame
+- prints model parameters and R-squared
+"""
+
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 
-# Read in the data
-codecademy = pd.read_csv('codecademy.csv')
-# Print the first five rows
+
+# --- Configuration: change filename if needed ---
+DATA_FILE = 'codecademy.csv'
+
+
+# --- Load data ---
+try:
+	codecademy = pd.read_csv(DATA_FILE)
+except FileNotFoundError:
+	raise FileNotFoundError(f"Could not find data file: {DATA_FILE}")
+
+print("Data preview:")
 print(codecademy.head())
-# Create a scatter plot of score vs completed
-plt.scatter(y=codecademy.score, x=codecademy.completed)
-# Show then clear plot
+print(codecademy.dtypes)
+
+
+# --- Scatter: score vs completed (raw) ---
+sns.set_style('whitegrid')
+plt.figure()
+sns.scatterplot(x='completed', y='score', data=codecademy)
+plt.xlabel('Completed prior lessons')
+plt.ylabel('Score')
+plt.title('Score vs Completed (raw scatter)')
 plt.show()
 plt.clf()
-# Fit a linear regression to predict score based on prior lessons completed
+
+
+# --- Linear regression: score ~ completed ---
+# using formula interface via OLS.from_formula keeps code short
 model = sm.OLS.from_formula('score ~ completed', data=codecademy).fit()
+print('\nModel: score ~ completed')
 print(model.params)
-# Intercept interpretation:
-# for reach completed course the score was 1.3 higher
-# Slope interpretation:
-# see above
-# Plot the scatter plot with the line on top
-plt.scatter(y=codecademy.score, x=codecademy.completed)
-plt.plot(codecademy.completed, model.predict(codecademy))
+print(f"R-squared: {model.rsquared:.3f}")
+
+
+# --- Scatter with fitted line ---
+plt.figure()
+sns.scatterplot(x='completed', y='score', data=codecademy)
+# sort x for a smooth line
+xs = np.sort(codecademy['completed'].values)
+preds = model.predict(pd.DataFrame({'completed': xs}))
+plt.plot(xs, preds, color='red')
+plt.xlabel('Completed prior lessons')
+plt.ylabel('Score')
+plt.title('Score vs Completed with OLS fit')
 plt.show()
 plt.clf()
-# Predict score for learner who has completed 20 prior lessons
-new_data = {'completed':[20]}
-print(model.predict(new_data))
-# Calculate fitted values
+
+
+# --- Example prediction ---
+new_df = pd.DataFrame({'completed': [20]})
+pred20 = model.predict(new_df).iloc[0]
+print(f"Predicted score for completed=20: {pred20:.2f}")
+
+
+# --- Residual diagnostics ---
 fitted_values = model.predict(codecademy)
-# Calculate residuals
-residuals = codecademy.score - fitted_values
-# Check normality assumption
-plt.hist(residuals)
+residuals = codecademy['score'] - fitted_values
+
+plt.figure()
+plt.hist(residuals, bins=20)
+plt.xlabel('Residual')
+plt.title('Residuals histogram')
 plt.show()
-plt.clf() # I don't think it meets the assumption, hard to say
-# Check homoscedasticity assumption
-plt.scatter(y=residuals, x=fitted_values)
+plt.clf()
+
+plt.figure()
+plt.scatter(fitted_values, residuals)
+plt.axhline(0, color='red', linestyle='--')
+plt.xlabel('Fitted values')
+plt.ylabel('Residuals')
+plt.title('Residuals vs Fitted')
 plt.show()
-plt.clf() # assumption met
-# Create a boxplot of score vs lesson
-sns.boxplot(y=codecademy.score, x=codecademy.lesson)
+plt.clf()
+
+
+# --- Compare scores by lesson ---
+plt.figure()
+sns.boxplot(x='lesson', y='score', data=codecademy)
+plt.title('Score distribution by Lesson')
+plt.xlabel('Lesson')
+plt.ylabel('Score')
 plt.show()
-plt.clf() # lesson a looks better
-# Fit a linear regression to predict score based on which lesson they took
+plt.clf()
+
 model2 = sm.OLS.from_formula('score ~ lesson', data=codecademy).fit()
+print('\nModel: score ~ lesson')
 print(model2.params)
-# Calculate and print the group means and mean difference (for comparison)
-'''
-mean_score_lessonA = np.mean(codecademy.score[codecademy.lesson == 'Lesson A'])
-mean_score_lessonB = np.mean(codecademy.score[codecademy.lesson == 'Lesson B'])
-print('Mean score (A): ', mean_score_lessonA)
-print('Mean score (B): ', mean_score_lessonB)
-print('Mean score difference: ', mean_score_lessonA - mean_score_lessonB)
-'''
-#OR alternatively
-print(codecademy.groupby('lesson').mean().score)
-# Use `sns.lmplot()` to plot `score` vs. `completed` colored by `lesson`
-sns.lmplot(x = 'completed', y = 'score', hue = 'lesson', data = codecademy)
+
+print('\nGroup means:')
+print(codecademy.groupby('lesson')['score'].mean())
+
+
+# --- Scatter + separate regression lines by lesson ---
+sns.lmplot(x='completed', y='score', hue='lesson', data=codecademy)
+plt.title('Score vs Completed by Lesson')
 plt.show()
