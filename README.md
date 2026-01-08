@@ -1,4 +1,4 @@
-# Linear Regression for Codecademy Students
+# Linear Regression for Students Scores
 
 This small project demonstrates exploratory data analysis and a simple linear regression predicting student `score` from `completed` prior lessons.
 
@@ -71,11 +71,3 @@ The script saves these figures in `figures/` and they are displayed when the scr
 
 - Scatter + regression lines by lesson:  
   ![lmplot_by_lesson](figures/lmplot_by_lesson.png)
-
-## Notes & next steps
-- Do not commit `codecademy.csv` if it contains personal data — instead include a small sample or a data-download script.
-- Add a `requirements.txt` or `environment.yml` for reproducibility.
-- Consider converting this workflow into a Jupyter notebook with narrative text for sharing on GitHub.
-
----
-Generated: updated README with results, interpretation, and embedded figures.
